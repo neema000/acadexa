@@ -6,6 +6,8 @@ from pydantic import BaseModel, EmailStr
 import secrets
 
 from backend.database import get_db_connection
+from backend.llm.voice_interpreter import interpret_with_ollama
+
 from backend.models import Teacher, Course, Enrollment, Student, User, UserRole
 from backend.schemas import TeacherCreate, TeacherUpdate, TeacherResponse
 

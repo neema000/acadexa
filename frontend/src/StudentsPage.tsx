@@ -17,6 +17,7 @@ const StudentsPage: React.FC = () => {
     gpa: 0,
     email: "",
     password: "",
+    current_semester: 1,
   });
 
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -49,16 +50,16 @@ const StudentsPage: React.FC = () => {
     fetchStudents();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: name === "gpa" ? Number(value) : value,
+      [name]: name === "gpa" || name === "current_semester" ? Number(value) : value,
     }));
   };
 
   const resetForm = () => {
-    setForm({ name: "", department: "", gpa: 0, email: "", password: "" }); // ✅ clear email/password too
+    setForm({ name: "", department: "", gpa: 0, email: "", password: "", current_semester: 1 }); // ✅ clear email/password too
     setEditingId(null);
   };
 
@@ -73,8 +74,8 @@ const StudentsPage: React.FC = () => {
         await api.post<Student>("/students/", form);
       } else {
         // ✅ UPDATE: DO NOT send email/password
-        const { name, department, gpa } = form;
-        await api.put<Student>(`/students/${editingId}`, { name, department, gpa });
+        const { name, department, gpa, current_semester } = form;
+        await api.put<Student>(`/students/${editingId}`, { name, department, gpa, current_semester });
       }
 
       resetForm();
@@ -96,6 +97,7 @@ const StudentsPage: React.FC = () => {
       gpa: Number(s.gpa),
       email: "", // ✅ keep empty in edit mode
       password: "", // ✅ keep empty in edit mode
+      current_semester: s.current_semester || 1,
     });
     setEditingId(s.id);
     setError(null);
@@ -181,6 +183,25 @@ const StudentsPage: React.FC = () => {
               />
             </div>
 
+            <div className="form-row">
+              <label>Current Semester (1-8)</label>
+              <select
+                name="current_semester"
+                value={form.current_semester || 1}
+                onChange={handleChange}
+                required
+              >
+                <option value="1">Semester 1</option>
+                <option value="2">Semester 2</option>
+                <option value="3">Semester 3</option>
+                <option value="4">Semester 4</option>
+                <option value="5">Semester 5</option>
+                <option value="6">Semester 6</option>
+                <option value="7">Semester 7</option>
+                <option value="8">Semester 8</option>
+              </select>
+            </div>
+
             {/* ✅ Show email/password only when creating */}
             {editingId === null && (
               <>
@@ -254,6 +275,7 @@ const StudentsPage: React.FC = () => {
                     <th>Name</th>
                     <th>Department</th>
                     <th>GPA</th>
+                    <th>Semester</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -265,6 +287,7 @@ const StudentsPage: React.FC = () => {
                       <td>{s.name}</td>
                       <td>{s.department}</td>
                       <td>{s.gpa}</td>
+                      <td>{s.current_semester || "-"}</td>
                       <td>
                         <div className="table-actions">
                           <button

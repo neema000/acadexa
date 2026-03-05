@@ -6,6 +6,7 @@ export interface Student {
   name: string;
   department: string;
   gpa: string; // backend se "3.40" string aati hai
+  current_semester?: number; // ✅ NEW (1-8)
 }
 
 export interface StudentCreatePayload {
@@ -16,6 +17,7 @@ export interface StudentCreatePayload {
   // ✅ NEW (optional)
   email?: string;
   password?: string;
+  current_semester?: number;
 }
 
 // ---- Auth ----
@@ -47,6 +49,7 @@ export interface Course {
   code: string;
   credit_hours: number;
   teacher_id: number | null;
+  semester?: number | null; // ✅ NEW (1-8)
 }
 
 export interface CoursePayload {
@@ -54,6 +57,7 @@ export interface CoursePayload {
   code: string;
   credit_hours: number;
   teacher_id?: number | null;
+  semester?: number | null; // ✅ NEW (1-8)
 }
 
 // ---- Enrollments ----
@@ -64,6 +68,7 @@ export interface Enrollment {
   semester: string | null;
   status: string | null; // "enrolled" | "dropped" | "completed" etc.
   grade: string | null;  // backend se Numeric string
+  enrollment_status?: string; // ✅ NEW "ongoing" | "passed" | "failed"
 }
 
 export interface EnrollmentPayload {
@@ -72,6 +77,7 @@ export interface EnrollmentPayload {
   semester?: string;
   status?: string;
   grade?: number | null;
+  enrollment_status?: string; // ✅ NEW
 }
 
 

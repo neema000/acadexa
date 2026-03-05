@@ -4,6 +4,29 @@
 import re
 from typing import Dict, Any, Optional, List
 
+
+_NUMBER_WORDS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+}
+
+
+def _parse_small_count(value: Optional[str]) -> Optional[int]:
+    if not value:
+        return None
+    raw = value.strip().lower()
+    if raw.isdigit():
+        return int(raw)
+    return _NUMBER_WORDS.get(raw)
+
 # NOTE: All matching is done on LOWERCASED, normalized text
 # via _normalize() in nlp_processor.
 
@@ -41,6 +64,20 @@ INTENT_PATTERNS: List[Dict[str, Any]] = [
         "post": lambda m: {
             "student_id": int(m.group("student_id")),
             "name": m.group("name").strip(),
+        },
+    },
+
+    # list_students — with optional course
+    {
+        "name": "list_students",
+        "regex": re.compile(
+            r"^(?:list|show|get)(?:\s+me)?\s+(?:first|top)\s+"
+            r"(?P<limit>\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+students?"
+            r"(?:\s+in\s+course\s+(?P<course>[a-z0-9\-]+))?$"
+        ),
+        "post": lambda m: {
+            "limit": _parse_small_count(m.group("limit")),
+            **({"course": m.group("course")} if m.groupdict().get("course") else {}),
         },
     },
 

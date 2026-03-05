@@ -1,10 +1,12 @@
 # backend/routes/voice.py
+from backend.llm.voice_interpreter import interpret_with_ollama, is_ollama_available
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from backend.database import get_db_connection
-from backend.security import get_current_user, hash_password
+from backend.security import get_current_user
 from backend.models import (
     Student,
     Course,
@@ -60,7 +62,7 @@ class VoiceCommand(BaseModel):
 
 
 @router.post("/command")
-def handle_command(
+async def handle_command(
     payload: VoiceCommand,
     db: Session = Depends(get_db_connection),
     current_user: User = Depends(get_current_user),
@@ -71,15 +73,16 @@ def handle_command(
     Already present:
       - student self intents (cgpa, my courses, my result)
       - teacher self intents (my teaching courses, enrollments)
-    Now added:
+    Added:
       - Admin/HOD + role-based list_* intents
-      - ✅ Attendance intents
+      - Attendance intents
+      - ✅ LLM (Ollama) fallback when intent == unknown
     """
 
     raw_text = payload.text
-    text = _normalize(raw_text)  # ✅ FIX: used by your keyword fallback section
+    text = _normalize(raw_text)
 
-    parsed = parse_command(raw_text)  # strong normalize inside
+    parsed = parse_command(raw_text)  # intent+slots from rule NLP
     matched = {"intent": parsed.intent, "slots": parsed.slots} if parsed.intent != "unknown" else None
 
     # =====================================================
@@ -87,7 +90,6 @@ def handle_command(
     # =====================================================
     if matched and matched.get("intent") == "show_my_cgpa":
         student_id = _require_student(current_user)
-
         gpa = current_user.student.gpa
         gpa_val = float(gpa) if gpa is not None else None
 
@@ -187,7 +189,7 @@ def handle_command(
         }
 
     # -----------------------------
-    # Existing keyword fallbacks (keep)
+    # Keyword fallbacks (keep)
     # -----------------------------
     if ("gpa" in text) or ("cgpa" in text):
         student_id = _require_student(current_user)
@@ -216,7 +218,7 @@ def handle_command(
         }
 
     # -----------------------------
-    # Teacher self intents (existing)
+    # Teacher self intents (existing keyword checks)
     # -----------------------------
     if (
         ("courses am i teaching" in text)
@@ -311,14 +313,13 @@ def handle_command(
         }
 
     # -----------------------------
-    # ✅ NLP flow (ADD REAL HANDLERS HERE)
+    # ✅ NLP flow
     # -----------------------------
     base = {"raw_text": raw_text, "parsed": parsed.model_dump()}
     intent = parsed.intent
     slots = parsed.slots or {}
 
     # Global safety: Voice Console is read-only.
-    # Block any create/update/delete intents at the API level.
     if intent.startswith("create_") or intent.startswith("update_") or intent.startswith("delete_"):
         return {
             **base,
@@ -327,16 +328,99 @@ def handle_command(
             "results": [],
         }
 
+    # =====================================================
+    # ✅ LLM FALLBACK: If NLP returns unknown, use Ollama
+    # =====================================================
     if intent == "unknown":
-        return {
-            **base,
-            "info": (
-                "I couldn't understand this command. "
-                "Try commands like 'list students' or 'list courses'."
-            ),
-            "results_type": None,
-            "results": [],
+        # Check if LLM is enabled via environment variable
+        from backend.llm.voice_interpreter import OLLAMA_ENABLED
+        
+        if not OLLAMA_ENABLED:
+            return {
+                **base,
+                "info": "I couldn't understand this command. Try: 'list students', 'show my gpa', 'my attendance', 'list courses', or 'show my result'.",
+                "results_type": None,
+                "results": [],
+            }
+        
+        # Quick health check before attempting LLM call
+        ollama_ok = await is_ollama_available()
+        
+        if not ollama_ok:
+            return {
+                **base,
+                "info": "I couldn't understand this command. Try: 'list students', 'show my gpa', 'my attendance', 'list courses'.",
+                "results_type": None,
+                "results": [],
+            }
+
+        role = _role_value(current_user.role)
+        role_str = role.value if hasattr(role, "value") else str(role)
+
+        user_context = {
+            "user_id": getattr(current_user, "id", None),
+            "role": role_str,
+            "student_id": getattr(getattr(current_user, "student", None), "id", None),
+            "teacher_id": getattr(getattr(current_user, "teacher", None), "id", None),
+            "department": getattr(getattr(current_user, "student", None), "department", None)
+                          or getattr(getattr(current_user, "teacher", None), "department", None),
         }
+
+        try:
+            llm_json, raw_llm = await interpret_with_ollama(raw_text, role_str, user_context)
+
+        except Exception as e:
+            # Ollama timeout/error -> fast fallback
+            error_msg = str(e)
+            if "timeout" in error_msg.lower():
+                info_msg = "LLM is taking too long to respond. Try simpler commands like 'list students' or 'show my gpa'."
+            else:
+                info_msg = f"LLM service error. Try commands like 'list students', 'show my courses', or 'my attendance'."
+            
+            return {
+                **base,
+                "info": info_msg,
+                "results_type": "ollama_error",
+                "results": [],
+            }
+
+        # clarification mode
+        if llm_json.get("needs_clarification"):
+            return {
+                "raw_text": raw_text,
+                "parsed": {
+                    "intent": "clarify",
+                    "slots": llm_json.get("slots", {}),
+                    "source": "ollama",
+                    "confidence": llm_json.get("confidence", 0.0),
+                },
+                "info": llm_json.get("clarifying_question") or "Please clarify your request.",
+                "results_type": "clarification",
+                "results": [],
+            }
+
+        # override intent/slots from LLM
+        intent = llm_json.get("intent", "unknown")
+        slots = llm_json.get("slots", {}) or {}
+
+        base = {
+            "raw_text": raw_text,
+            "parsed": {
+                "intent": intent,
+                "slots": slots,
+                "source": "ollama",
+                "confidence": llm_json.get("confidence", 0.0),
+            },
+        }
+
+        # if still unknown after LLM
+        if intent == "unknown":
+            return {
+                **base,
+                "info": "I couldn't understand this command. Try commands like 'list students' or 'list courses'.",
+                "results_type": None,
+                "results": [],
+            }
 
     # -----------------------------
     # ✅ Attendance (Student)
@@ -358,11 +442,7 @@ def handle_command(
             return x.value if hasattr(x, "value") else str(x)
 
         for en, co in enrolls:
-            total_sessions = (
-                db.query(AttendanceSession)
-                .filter(AttendanceSession.course_id == co.id)
-                .count()
-            )
+            total_sessions = db.query(AttendanceSession).filter(AttendanceSession.course_id == co.id).count()
 
             recs = (
                 db.query(AttendanceRecord)
@@ -378,7 +458,6 @@ def handle_command(
             absent = sum(1 for r in recs if _sv(r.status) == "absent")
             late = sum(1 for r in recs if _sv(r.status) == "late")
 
-            # If session exists but record missing => treat as absent
             missing = max(total_sessions - len(recs), 0)
             absent_total = absent + missing
 
@@ -398,12 +477,7 @@ def handle_command(
             )
 
         if not results:
-            return {
-                **base,
-                "info": "No attendance data found yet.",
-                "results_type": "attendance_summary",
-                "results": [],
-            }
+            return {**base, "info": "No attendance data found yet.", "results_type": "attendance_summary", "results": []}
 
         return {
             **base,
@@ -439,12 +513,7 @@ def handle_command(
             .first()
         )
         if not en:
-            return {
-                **base,
-                "info": "You are not enrolled in this course.",
-                "results_type": "attendance_course_detail",
-                "results": [],
-            }
+            return {**base, "info": "You are not enrolled in this course.", "results_type": "attendance_course_detail", "results": []}
 
         sessions = (
             db.query(AttendanceSession)
@@ -485,15 +554,12 @@ def handle_command(
         }
 
     # -----------------------------
-    # ✅ NEW: role-based list_* intents
+    # ✅ role-based list_* intents
     # -----------------------------
     role = _role_value(current_user.role)
-
-    # helper slot getters
     course_code = (slots.get("course") or slots.get("course_code") or "").strip()
     raw_sid = slots.get("student_id") or slots.get("student") or None
 
-    # 1) list_teachers (Admin/HOD only)
     if intent == "list_teachers":
         _require_admin_or_hod(current_user)
 
@@ -510,45 +576,29 @@ def handle_command(
         ]
         return {**base, "info": f"Found {len(results)} teacher(s).", "results_type": "teachers", "results": results}
 
-    # 2) list_courses
     if intent == "list_courses":
-        # Admin/HOD: all courses
         if role in (UserRole.admin, UserRole.hod):
             q = db.query(Course)
-
             if course_code:
                 q = q.filter(Course.code.ilike(course_code))
-
             courses = q.order_by(Course.id).all()
             results = [
-                {
-                    "id": c.id,
-                    "title": c.title,
-                    "code": c.code,
-                    "credit_hours": c.credit_hours,
-                    "teacher_id": c.teacher_id,
-                }
+                {"id": c.id, "title": c.title, "code": c.code, "credit_hours": c.credit_hours, "teacher_id": c.teacher_id}
                 for c in courses
             ]
             return {**base, "info": f"Found {len(results)} course(s).", "results_type": "courses", "results": results}
 
-        # Teacher: only courses they teach
         if role == UserRole.teacher:
             teacher_id = _require_teacher(current_user)
             q = db.query(Course).filter(Course.teacher_id == teacher_id)
             if course_code:
                 q = q.filter(Course.code.ilike(course_code))
             courses = q.order_by(Course.id).all()
-            results = [
-                {"id": c.id, "title": c.title, "code": c.code, "credit_hours": c.credit_hours}
-                for c in courses
-            ]
+            results = [{"id": c.id, "title": c.title, "code": c.code, "credit_hours": c.credit_hours} for c in courses]
             return {**base, "info": f"Found {len(results)} course(s) you teach.", "results_type": "courses", "results": results}
 
-        # Student: only courses they are enrolled in
         if role == UserRole.student:
             student_id = _require_student(current_user)
-
             q = (
                 db.query(Course)
                 .join(Enrollment, Enrollment.course_id == Course.id)
@@ -556,58 +606,50 @@ def handle_command(
             )
             if course_code:
                 q = q.filter(Course.code.ilike(course_code))
-
             courses = q.order_by(Course.id).all()
-            results = [
-                {"id": c.id, "title": c.title, "code": c.code, "credit_hours": c.credit_hours}
-                for c in courses
-            ]
+            results = [{"id": c.id, "title": c.title, "code": c.code, "credit_hours": c.credit_hours} for c in courses]
             return {**base, "info": f"Found {len(results)} enrolled course(s).", "results_type": "courses", "results": results}
 
-    # 3) list_students
     if intent == "list_students":
-        # Admin/HOD: all students OR filter by course
+        raw_limit = slots.get("limit")
+        try:
+            limit = int(raw_limit) if raw_limit is not None else None
+        except (TypeError, ValueError):
+            limit = None
+        if limit is not None and limit <= 0:
+            limit = None
+
         if role in (UserRole.admin, UserRole.hod):
             q = db.query(Student)
 
-            # Optional: filter by course code
             if course_code:
                 course = db.query(Course).filter(Course.code.ilike(course_code)).first()
                 if not course:
-                    return {
-                        **base,
-                        "info": f"No course found with code '{course_code}'.",
-                        "results_type": "students",
-                        "results": [],
-                    }
-
+                    return {**base, "info": f"No course found with code '{course_code}'.", "results_type": "students", "results": []}
                 q = (
                     db.query(Student)
                     .join(Enrollment, Enrollment.student_id == Student.id)
                     .filter(Enrollment.course_id == course.id)
                 )
 
-            # Optional: filter by department (from NLP slot)
             dept = (slots.get("department") or "").strip()
             if dept:
                 q = q.filter(Student.department.ilike(dept))
 
-            students = q.order_by(Student.id).all()
+            q = q.order_by(Student.id)
+            if limit is not None:
+                q = q.limit(limit)
+
+            students = q.all()
             results = [
-                {
-                    "id": s.id,
-                    "name": getattr(s, "name", None),
-                    "department": getattr(s, "department", None),
-                    "gpa": float(s.gpa) if getattr(s, "gpa", None) is not None else None,
-                }
+                {"id": s.id, "name": getattr(s, "name", None), "department": getattr(s, "department", None),
+                 "gpa": float(s.gpa) if getattr(s, "gpa", None) is not None else None}
                 for s in students
             ]
             return {**base, "info": f"Found {len(results)} student(s).", "results_type": "students", "results": results}
 
-        # Teacher: only students in teacher courses (optional filter by course/department)
         if role == UserRole.teacher:
             teacher_id = _require_teacher(current_user)
-
             q = (
                 db.query(Student, Course, Enrollment)
                 .join(Enrollment, Enrollment.student_id == Student.id)
@@ -615,16 +657,18 @@ def handle_command(
                 .filter(Course.teacher_id == teacher_id)
             )
 
-            # Optional: filter by course code
             if course_code:
                 q = q.filter(Course.code.ilike(course_code))
 
-            # Optional: filter by department (from NLP slot)
             dept = (slots.get("department") or "").strip()
             if dept:
                 q = q.filter(Student.department.ilike(dept))
 
-            rows = q.order_by(Student.id).all()
+            q = q.order_by(Student.id)
+            if limit is not None:
+                q = q.limit(limit)
+
+            rows = q.all()
             results = []
             for st, co, en in rows:
                 results.append(
@@ -640,18 +684,14 @@ def handle_command(
                 )
             return {**base, "info": f"Found {len(results)} student record(s) in your courses.", "results_type": "students", "results": results}
 
-        # Student: not allowed
         raise HTTPException(status_code=403, detail="You are not allowed to list all students")
 
-    # 4) list_enrollments_for_student
     if intent == "list_enrollments_for_student":
-        # student_id parsing
         try:
             student_id = int(raw_sid) if raw_sid is not None else None
         except (TypeError, ValueError):
             student_id = None
 
-        # Student: allow only self (if id missing -> self)
         if role == UserRole.student:
             my_id = _require_student(current_user)
             if student_id is None:
@@ -682,7 +722,6 @@ def handle_command(
                 )
             return {**base, "info": f"Found {len(results)} enrollment(s).", "results_type": "enrollments", "results": results}
 
-        # Admin/HOD: allow any student
         if role in (UserRole.admin, UserRole.hod):
             if not student_id:
                 return {**base, "info": "Please specify a valid student id.", "results_type": "enrollments", "results": []}
@@ -712,7 +751,6 @@ def handle_command(
                 )
             return {**base, "info": f"Found {len(results)} enrollment(s) for student {student_id}.", "results_type": "enrollments", "results": results}
 
-        # Teacher: allow only if student is in teacher's courses
         if role == UserRole.teacher:
             teacher_id = _require_teacher(current_user)
             if not student_id:
@@ -742,7 +780,6 @@ def handle_command(
                         "grade": float(en.grade) if en.grade is not None else None,
                     }
                 )
-
             return {**base, "info": f"Found {len(results)} enrollment(s) for student {student_id} in your courses.", "results_type": "enrollments", "results": results}
 
     # -----------------------------
@@ -750,7 +787,7 @@ def handle_command(
     # -----------------------------
     return {
         **base,
-        "info": "NLP parsed your command, but no concrete action is implemented for this intent yet.",
+        "info": "NLP/LLM parsed your command, but no concrete action is implemented for this intent yet.",
         "results_type": None,
         "results": [],
     }

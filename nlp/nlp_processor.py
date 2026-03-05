@@ -41,6 +41,21 @@ def _normalize(text: str) -> str:
     # collapse runs of whitespace into a single space
     text = re.sub(r"\s+", " ", text)
 
+    # remove common polite filler words that don't affect intent
+    text = re.sub(r"\b(?:please|kindly)\b", " ", text)
+
+    # remove conversational helper prefixes at sentence start
+    text = re.sub(r"^(?:would|could|can)\s+you\s+", "", text)
+
+    # normalize "show me my ..." -> "show my ..." style phrasing
+    text = re.sub(r"\b(show|get|display|tell)\s+me\s+my\b", r"\1 my", text)
+
+    # normalize "get me first 5 students" -> "get first 5 students"
+    text = re.sub(r"\b(show|get|display|tell)\s+me\b", r"\1", text)
+
+    # collapse again after substitutions
+    text = re.sub(r"\s+", " ", text)
+
     # final cleanup: remove leading/trailing spaces
     text = text.strip()
 

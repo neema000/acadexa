@@ -60,3 +60,24 @@ def test_unknown_intent():
     parsed = parse_command(cmd)
     assert parsed["intent"] == "unknown"
     assert parsed["slots"] == {}
+
+
+def test_polite_attendance_phrase_maps_to_rule_intent():
+    cmd = "would you show me please my attendance"
+    parsed = parse_command(cmd)
+    assert parsed["intent"] == "show_my_attendance"
+    assert parsed["slots"] == {}
+
+
+def test_list_first_5_students_maps_limit_slot():
+    cmd = "list first 5 students"
+    parsed = parse_command(cmd)
+    assert parsed["intent"] == "list_students"
+    assert parsed["slots"]["limit"] == 5
+
+
+def test_get_me_first_five_students_maps_limit_slot():
+    cmd = "get me first five students"
+    parsed = parse_command(cmd)
+    assert parsed["intent"] == "list_students"
+    assert parsed["slots"]["limit"] == 5

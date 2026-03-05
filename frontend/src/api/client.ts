@@ -9,7 +9,7 @@ const API_BASE =
 
 export const api = axios.create({
   baseURL: API_BASE,
-  timeout: 10000, // ✅ FIX 1: prevent infinite loading (10 seconds)
+  timeout: 120000, // allow slower LLM responses (up to 2 minutes)
 });
 
 // Set/remove token manually (used after login/logout)

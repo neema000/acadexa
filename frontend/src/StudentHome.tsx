@@ -1,6 +1,7 @@
 // frontend/src/StudentHome.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { api } from "./api/client";
+import CourseRegistrationPage from "./CourseRegistrationPage";
 
 type Profile = {
   id: number;
@@ -102,7 +103,7 @@ type AttendanceMyCourseRes = {
 };
 
 
-type OpenTab = "profile" | "gpa" | "courses" | "enrollments" | "attendance" | "grades" | "fees";
+type OpenTab = "profile" | "gpa" | "courses" | "enrollments" | "attendance" | "grades" | "fees" | "registration";
 
 function toNumberSafe(v: unknown): number {
   if (v === null || v === undefined) return 0;
@@ -335,36 +336,39 @@ const StudentHome: React.FC = () => {
         View your profile, GPA, courses, enrollments, attendance, grades and fee status.
       </p>
 
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
-        <button className={"nav-button" + (open === "profile" ? " active" : "")} onClick={() => toggle("profile")}>
+      <div className="dashboard-tabs">
+        <button className={"tab-pill" + (open === "profile" ? " active" : "")} onClick={() => toggle("profile")}>
           My Profile
         </button>
-        <button className={"nav-button" + (open === "gpa" ? " active" : "")} onClick={() => toggle("gpa")}>
+        <button className={"tab-pill" + (open === "gpa" ? " active" : "")} onClick={() => toggle("gpa")}>
           GPA
         </button>
-        <button className={"nav-button" + (open === "courses" ? " active" : "")} onClick={() => toggle("courses")}>
+        <button className={"tab-pill" + (open === "courses" ? " active" : "")} onClick={() => toggle("courses")}>
           Courses
         </button>
+        <button className={"tab-pill" + (open === "registration" ? " active" : "")} onClick={() => toggle("registration")}>
+          Register Courses
+        </button>
         <button
-          className={"nav-button" + (open === "enrollments" ? " active" : "")}
+          className={"tab-pill" + (open === "enrollments" ? " active" : "")}
           onClick={() => toggle("enrollments")}
         >
           Enrollments
         </button>
         <button
-          className={"nav-button" + (open === "attendance" ? " active" : "")}
+          className={"tab-pill" + (open === "attendance" ? " active" : "")}
           onClick={() => toggle("attendance")}
         >
           Attendance
         </button>
-        <button className={"nav-button" + (open === "grades" ? " active" : "")} onClick={() => toggle("grades")}>
+        <button className={"tab-pill" + (open === "grades" ? " active" : "")} onClick={() => toggle("grades")}>
           Grades
         </button>
-        <button className={"nav-button" + (open === "fees" ? " active" : "")} onClick={() => toggle("fees")}>
+        <button className={"tab-pill" + (open === "fees" ? " active" : "")} onClick={() => toggle("fees")}>
           Fees
         </button>
 
-        <button className="btn btn-secondary" onClick={loadAll} style={{ marginLeft: "auto" }}>
+        <button className="btn btn-secondary tab-refresh" onClick={loadAll}>
           Refresh
         </button>
       </div>
@@ -458,6 +462,9 @@ const StudentHome: React.FC = () => {
           </div>
         </section>
       )}
+
+      {/* COURSE REGISTRATION */}
+      {open === "registration" && <CourseRegistrationPage />}
 
       {/* ENROLLMENTS */}
       {open === "enrollments" && (

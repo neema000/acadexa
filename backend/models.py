@@ -33,6 +33,7 @@ class Student(Base):
     name = Column(String(50))
     department = Column(String(50), index=True)
     gpa = Column(Numeric(3, 2))
+    current_semester = Column(Integer, nullable=True, default=1)  # Student's current semester (1-8)
 
     # Link Student -> User (auth)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=True)
@@ -62,6 +63,7 @@ class Course(Base):
     title = Column(String, nullable=False)
     code = Column(String, nullable=False, unique=True)
     credit_hours = Column(Integer, nullable=False)
+    semester = Column(Integer, nullable=True)  # Semester 1-8, set by admin
 
     teacher_id = Column(Integer, ForeignKey("teachers.id"), nullable=True)
     teacher = relationship("Teacher", back_populates="courses")
@@ -75,7 +77,8 @@ class Enrollment(Base):
     course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
 
     semester = Column(String(20), nullable=True)
-    status = Column(String(20), nullable=True, default="enrolled")
+    status = Column(String(20), nullable=True, default="enrolled")  # enrolled, completed, dropped
+    enrollment_status = Column(String(20), nullable=True, default="ongoing")  # ongoing, passed, failed
     grade = Column(Numeric(3, 2), nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
