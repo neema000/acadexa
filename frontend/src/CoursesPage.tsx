@@ -15,6 +15,7 @@ const CoursesPage: React.FC = () => {
     code: "",
     credit_hours: 3,
     teacher_id: null,
+    semester: null,
   });
 
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -59,6 +60,9 @@ const CoursesPage: React.FC = () => {
       if (name === "teacher_id") {
         return { ...prev, teacher_id: value ? Number(value) : null };
       }
+      if (name === "semester") {
+        return { ...prev, semester: value ? Number(value) : null };
+      }
       return { ...prev, [name]: value };
     });
   };
@@ -69,6 +73,7 @@ const CoursesPage: React.FC = () => {
       code: "",
       credit_hours: 3,
       teacher_id: null,
+      semester: null,
     });
     setEditingId(null);
   };
@@ -102,6 +107,7 @@ const CoursesPage: React.FC = () => {
       code: c.code,
       credit_hours: c.credit_hours,
       teacher_id: c.teacher_id ?? null,
+      semester: c.semester ?? null,
     });
     setEditingId(c.id);
     setError(null);
@@ -177,6 +183,25 @@ const CoursesPage: React.FC = () => {
             </div>
 
             <div className="form-row">
+              <label>Semester (1-8)</label>
+              <select
+                name="semester"
+                value={form.semester ?? ""}
+                onChange={handleChange}
+              >
+                <option value="">-- Select Semester --</option>
+                <option value="1">Semester 1</option>
+                <option value="2">Semester 2</option>
+                <option value="3">Semester 3</option>
+                <option value="4">Semester 4</option>
+                <option value="5">Semester 5</option>
+                <option value="6">Semester 6</option>
+                <option value="7">Semester 7</option>
+                <option value="8">Semester 8</option>
+              </select>
+            </div>
+
+            <div className="form-row">
               <label>Teacher</label>
               <select
                 name="teacher_id"
@@ -227,6 +252,7 @@ const CoursesPage: React.FC = () => {
                   <th>Title</th>
                   <th>Code</th>
                   <th>Credit hours</th>
+                  <th>Semester</th>
                   <th>Teacher</th>
                   <th>Actions</th>
                 </tr>
@@ -238,6 +264,7 @@ const CoursesPage: React.FC = () => {
                     <td>{c.title}</td>
                     <td>{c.code}</td>
                     <td>{c.credit_hours}</td>
+                    <td>{c.semester ? `Semester ${c.semester}` : "-"}</td>
                     <td>{getTeacherName(c.teacher_id)}</td>
                     <td>
                       <div className="table-actions">

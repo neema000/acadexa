@@ -22,6 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.routes.assessments import router as assessments_router
 from backend.routes.fees import router as fees_router
 from backend.routes.attendance import router as attendance_router
+from backend.routes.course_registration import router as course_registration_router
 
 
 
@@ -81,6 +82,7 @@ app.include_router(voice_router)
 app.include_router(assessments_router)
 app.include_router(fees_router)
 app.include_router(attendance_router)
+app.include_router(course_registration_router)
 
 
 @app.get("/")

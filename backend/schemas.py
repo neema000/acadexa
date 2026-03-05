@@ -19,12 +19,14 @@ class StudentCreate(BaseModel):
     # ✅ NEW: create login account for student
     email: EmailStr | None = None
     password: str | None = Field(default=None, min_length=6, max_length=128)
+    current_semester: int | None = Field(default=1, ge=1, le=8)
 
 
 class StudentUpdate(BaseModel):
     name: str
     department: str
     gpa: Decimal
+    current_semester: int | None = Field(default=None, ge=1, le=8)
 
 
 class StudentResponse(BaseModel):
@@ -34,6 +36,7 @@ class StudentResponse(BaseModel):
     name: str
     department: str
     gpa: Decimal
+    current_semester: int | None = None
 
 
 # -------------------------
