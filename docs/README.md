@@ -64,43 +64,29 @@ The system uses **Natural Language Processing (NLP)** to identify user intents a
 
 ---
 
-## 📸 Application Screenshots
-
 ### 🔐 Login Screen
 
-![Login Screen](docs/images/login screen.png)
-
----
+![Login Screen](docs/images/login-screen.png)
 
 ### 🏠 Dashboard
 
 ![Dashboard](docs/images/dashboard.png)
 
----
-
 ### 🎤 Voice Input
 
-![Voice Input](docs/images/voice input.png)
-
----
+![Voice Input](docs/images/voice-input.png)
 
 ### 💬 Voice Console
 
-![Voice Console](docs/images/voice console.png)
-
----
+![Voice Console](docs/images/voice-console.png)
 
 ### 🧠 NLP Intent Recognition – Show Courses
 
-![NLP Intent](docs/images/nlp intent show courses.png)
-
----
+![NLP Intent](docs/images/nlp-intent-show-courses.png)
 
 ### 👨‍💼 Admin Panel
 
-![Admin Panel](docs/images/admin pannel.png)
-
----
+![Admin Panel](docs/images/admin-panel.png)
 
 ## 📂 Project Structure
 
