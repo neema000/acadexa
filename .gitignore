@@ -17,4 +17,6 @@ frontend/.env
 .env
 
  
- 
+ # Environment Variables
+.env
+.env.*
