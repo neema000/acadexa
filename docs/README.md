@@ -1,4 +1,4 @@
-# 🎓 Acadexa – AI-Powered Voice-Enabled Learning Management System
+# Acadexa –Voice-Enabled Learning Management System
 
 > An AI-powered, voice-enabled Learning Management System (LMS) that enables users to interact with academic services using natural voice commands. Acadexa combines NLP, FastAPI, PostgreSQL, and an LLM-powered fallback mechanism to deliver an intelligent learning experience.
 
@@ -10,30 +10,67 @@
 
 ---
 
-## 📖 Project Overview
+## Project Overview
 
-Acadexa is an AI-powered Voice-Enabled Learning Management System (LMS) developed as a Final Year Project (FYP). It allows students to interact with the LMS using voice commands instead of traditional navigation.
+Acadexa is Voice-Enabled Learning Management System (LMS) developed as a Final Year Project (FYP). It allows students to interact with the LMS using voice commands instead of traditional navigation.
 
 The system uses **Natural Language Processing (NLP)** to identify user intents and automatically invokes a **Large Language Model (LLM)** whenever a query cannot be answered through predefined intents. The backend is built with **FastAPI**, while **PostgreSQL** is used for persistent data storage.
 
 ---
 
-## ✨ Key Features
+##  Key Features
 
-- 🎤 Voice-enabled interaction
-- 🧠 NLP-based intent recognition
-- 🤖 LLM fallback for complex queries
-- ⚡ FastAPI REST APIs
-- 👨‍🎓 Student Dashboard
-- 👨‍💼 Admin Panel
-- 📚 Course Management
-- 🔐 Authentication
-- 🗄 PostgreSQL integration
-- 📡 RESTful architecture
+-  Voice-enabled interaction
+-  NLP-based intent recognition
+-  LLM fallback for complex queries
+-  FastAPI REST APIs
+-  Student Dashboard
+-  Admin Panel
+-  Course Management
+-  Authentication
+-  PostgreSQL integration
+-  RESTful architecture
 
 ---
 
-## 🛠 Technology Stack
+## Application Screenshots
+
+###  Login Screen
+
+![Login Screen](docs/images/login-screen.jpeg)
+
+---
+
+### Dashboard
+
+![Dashboard](docs/images/dashboard.jpeg)
+
+---
+
+###  Voice Input
+
+![Voice Input](docs/images/voice-input.jpeg)
+
+---
+
+### Voice Console
+
+![Voice Console](docs/images/voice-console.jpeg)
+
+---
+
+###  NLP Intent Recognition – Show Courses
+
+![NLP Intent](docs/images/nlp-intent-show-courses.jpeg)
+
+---
+
+### Admin Panel
+
+![Admin Panel](docs/images/admin-panel.jpeg)
+
+
+## Technology Stack
 
 ### Backend
 
@@ -62,33 +99,9 @@ The system uses **Natural Language Processing (NLP)** to identify user intents a
 - GitHub
 - Visual Studio Code
 
----
 
-### 🔐 Login Screen
 
-![Login Screen](docs/images/login-screen.png)
-
-### 🏠 Dashboard
-
-![Dashboard](docs/images/dashboard.png)
-
-### 🎤 Voice Input
-
-![Voice Input](docs/images/voice-input.png)
-
-### 💬 Voice Console
-
-![Voice Console](docs/images/voice-console.png)
-
-### 🧠 NLP Intent Recognition – Show Courses
-
-![NLP Intent](docs/images/nlp-intent-show-courses.png)
-
-### 👨‍💼 Admin Panel
-
-![Admin Panel](docs/images/admin-panel.png)
-
-## 📂 Project Structure
+## Project Structure
 
 ```text
 acadexa/
