@@ -1,86 +1,121 @@
-# Acadexa — Voice-Controlled LMS (Starter)
+# 🎓 Acadexa – AI-Powered Voice-Enabled Learning Management System
 
-Overview
+> An AI-powered, voice-enabled Learning Management System (LMS) that enables users to interact with academic services using natural voice commands. Acadexa combines NLP, FastAPI, PostgreSQL, and an LLM-powered fallback mechanism to deliver an intelligent learning experience.
 
-Acadexa is a Final Year Project (FYP) that provides an AI-powered, voice-enabled Learning Management System (LMS). It allows users to interact with the system using voice commands while providing intelligent responses through NLP and an LLM-based fallback mechanism for complex queries.
+![Python](https://img.shields.io/badge/Python-3.x-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-Framework-green)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue)
+![NLP](https://img.shields.io/badge/NLP-Intent%20Recognition-orange)
+![LLM](https://img.shields.io/badge/AI-LLM-purple)
 
-Project Type: Final Year Project (Team of Two)
+---
 
-Features
-Voice-enabled user interaction
-NLP-based intent recognition
-LLM fallback for complex or unanswered queries
-FastAPI REST APIs
-Student and course management
-PostgreSQL database integration
-Modular backend architecture
+## 📖 Project Overview
 
-Tech Stack
-Backend
-Python
-FastAPI
-SQLAlchemy
-Database
-PostgreSQL
-AI / NLP
-Rule-based NLP
-Large Language Model (LLM) fallback
-Frontend
-HTML
-CSS
-JavaScript
-React.js
-TypeScript
+Acadexa is an AI-powered Voice-Enabled Learning Management System (LMS) developed as a Final Year Project (FYP). It allows students to interact with the LMS using voice commands instead of traditional navigation.
 
-Installation
-Clone the repository
-git clone https://github.com/neema000/acadexa.git
-cd acadexa
-Create a virtual environment
-python -m venv venv
-Activate
+The system uses **Natural Language Processing (NLP)** to identify user intents and automatically invokes a **Large Language Model (LLM)** whenever a query cannot be answered through predefined intents. The backend is built with **FastAPI**, while **PostgreSQL** is used for persistent data storage.
 
-Windows
+---
 
-venv\Scripts\activate
+## ✨ Key Features
 
-Linux / macOS
+- 🎤 Voice-enabled interaction
+- 🧠 NLP-based intent recognition
+- 🤖 LLM fallback for complex queries
+- ⚡ FastAPI REST APIs
+- 👨‍🎓 Student Dashboard
+- 👨‍💼 Admin Panel
+- 📚 Course Management
+- 🔐 Authentication
+- 🗄 PostgreSQL integration
+- 📡 RESTful architecture
 
-source venv/bin/activate
-Install dependencies
-pip install -r requirements.txt
-Configure environment variables
-Create a .env file using .env.example.
+---
 
-Run the backend
-uvicorn backend.main:app --reload
+## 🛠 Technology Stack
 
-My Contributions
+### Backend
 
-This repository showcases my contributions to the project, including:
+- Python
+- FastAPI
+- SQLAlchemy
 
-FastAPI backend development
-REST API implementation
-PostgreSQL integration
-LLM integration for complex query handling
-Voice query processing
-Backend testing and debugging
-Team
+### Database
 
-This project was developed as a Final Year Project by a team of two members. This repository highlights my implementation and contributions while preserving the collaborative nature of the project.
+- PostgreSQL
 
-## Structure
-- backend/  — FastAPI app
-- nlp/      — intent parsing rules
-- web/      — frontend demo
-- db/       — schema & seed
-- docs/     — documentation
+### AI & NLP
 
-Future Improvements
-Semantic search using vector embeddings
-Text-to-speech responses
-Multi-language support
-Advanced analytics dashboard
-License
+- Natural Language Processing (NLP)
+- Large Language Model (LLM)
 
-This project is intended for educational and portfolio purposes.
+### Frontend
+
+- HTML
+- CSS
+- JavaScript
+
+### Development Tools
+
+- Git
+- GitHub
+- Visual Studio Code
+
+---
+
+## 📸 Application Screenshots
+
+### 🔐 Login Screen
+
+![Login Screen](docs/images/login screen.png)
+
+---
+
+### 🏠 Dashboard
+
+![Dashboard](docs/images/dashboard.png)
+
+---
+
+### 🎤 Voice Input
+
+![Voice Input](docs/images/voice input.png)
+
+---
+
+### 💬 Voice Console
+
+![Voice Console](docs/images/voice console.png)
+
+---
+
+### 🧠 NLP Intent Recognition – Show Courses
+
+![NLP Intent](docs/images/nlp intent show courses.png)
+
+---
+
+### 👨‍💼 Admin Panel
+
+![Admin Panel](docs/images/admin pannel.png)
+
+---
+
+## 📂 Project Structure
+
+```text
+acadexa/
+│
+├── backend/
+├── frontend/
+├── db/
+├── docs/
+│   └── images/
+├── nlp/
+├── scripts/
+├── tests/
+├── voice/
+├── .env.example
+├── .gitignore
+└── README.md
